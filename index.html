@@ -179,8 +179,9 @@
   .level-btn:not(.locked):hover{ border-color:var(--orange); transform:translateY(-3px); box-shadow:0 0 16px rgba(255,190,70,.5), 0 0 34px rgba(255,190,70,.25); }
 
   /* ---- game screen ---- */
-  #screen-game{ padding:10px 10px 10px; }
-  #screen-game.active{ height:100vh; height:100dvh; }
+  #screen-game{ padding:10px 10px calc(24px + env(safe-area-inset-bottom, 0px)); }
+  #screen-game.active{ height:100vh; height:100dvh; height:var(--app-h, 100dvh); }
+  body.ingame{ overflow:hidden; }
   #gameHud{
     width:100%; max-width:900px; display:flex; align-items:center; gap:8px; flex-wrap:nowrap;
     justify-content:center; margin:0 auto 8px; flex-shrink:0;
@@ -226,6 +227,18 @@
   }
   .chip img{ width:42px; height:42px; object-fit:contain; background:#fff; border-radius:50%; padding:4px; }
   .chip .cnt{ font-family:'Berlin Sans FB Demi','Segoe UI',Arial,sans-serif; font-size:20px; color:var(--orange-bright); min-width:30px; text-align:center; text-shadow:0 0 8px rgba(255,190,70,.6); }
+  .chip{ cursor:pointer; }
+  /* small pop-up under the clue row, ~3x the size of the chip icon */
+  #peek{
+    position:fixed; z-index:40; padding:8px; border-radius:18px;
+    background:radial-gradient(circle at 50% 40%, #fff8e6, #e8dcc0);
+    border:2px solid rgba(255,190,70,.85);
+    box-shadow:0 0 0 2px rgba(0,0,0,.45), 0 0 22px rgba(255,190,70,.5), 0 10px 28px rgba(0,0,0,.65);
+    opacity:0; pointer-events:none; transform:scale(.5); transform-origin:50% 0;
+    transition:opacity .18s, transform .2s cubic-bezier(.2,1.4,.4,1);
+  }
+  #peek.show{ opacity:1; transform:scale(1); pointer-events:auto; }
+  #peek img{ display:block; width:var(--peek-s,100px); height:var(--peek-s,100px); object-fit:contain; }
   .chip.pop{ animation:chipPop .35s ease; }
   @keyframes chipPop{ 50%{ transform:scale(1.18); } }
   .chip.done{ opacity:.55; border-color:var(--green); box-shadow:0 0 10px rgba(53,224,194,.45); }
@@ -600,7 +613,8 @@
         <button class="icon-btn zoom-btn" id="zoomOut" aria-label="Zoom out">−</button>
       </div>
     </div>
-    <p id="controlHint">Mark every copy of the evidence above · drag to pan · pinch or scroll to zoom</p>
+    <p id="controlHint">Mark every copy of the evidence above · tap a clue to enlarge · drag to pan · pinch or scroll to zoom</p>
+    <div id="peek" aria-hidden="true"><img alt=""></div>
   </div>
 
   <footer class="foot">
@@ -698,6 +712,7 @@
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     $(id).classList.add('active');
     document.body.classList.toggle('ingame', id==='screen-game');
+    hidePeek();
     if(id!=='screen-game' && timerInterval){ clearInterval(timerInterval); timerInterval=null; }
   }
   function openLevelSelect(diffKey){
@@ -776,6 +791,20 @@
       tray.appendChild(c);
     });
   }
+  let peekTimer = null;
+  function hidePeek(){ clearTimeout(peekTimer); $('peek').classList.remove('show'); }
+  function peek(t, chip){
+    const p = $('peek'), s = Math.round(chip.querySelector('img').getBoundingClientRect().width * 3);
+    const cr = chip.getBoundingClientRect(), tr = $('tray').getBoundingClientRect(), w = s + 20;
+    p.style.setProperty('--peek-s', s+'px');
+    p.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, cr.left + cr.width/2 - w/2)) + 'px';
+    p.style.top = (tr.bottom + 6) + 'px';
+    p.querySelector('img').src = `pages/p${pageNum}_t${t}.png`;
+    p.classList.add('show');
+    clearTimeout(peekTimer); peekTimer = setTimeout(hidePeek, 2500);
+  }
+  $('tray').addEventListener('click', e=>{ const c = e.target.closest('.chip'); if(c) peek(+c.id.slice(4), c); });
+  $('peek').addEventListener('click', hidePeek);
   function updateChip(t){
     const c = $('chip'+t);
     c.querySelector('.cnt').textContent = remaining[t] > 0 ? remaining[t] : '✓';
@@ -1034,7 +1063,11 @@
   $('replayBtn').addEventListener('click', ()=>{ $('winModal').classList.remove('active'); startLevel(currentDiff, currentLevelNum); });
   $('levelSelectBtn').addEventListener('click', ()=>{ $('winModal').classList.remove('active'); renderLevelSelect(); showScreen('screen-levels'); });
   $('menuBtn').addEventListener('click', ()=>{ $('winModal').classList.remove('active'); showScreen('screen-menu'); });
-  window.addEventListener('resize', ()=>{ if(pageMeta && $('screen-game').classList.contains('active')){
+  // size the game screen to the part of the screen the phone browser actually shows (its toolbars move)
+  function setAppH(){ document.documentElement.style.setProperty('--app-h', window.innerHeight+'px'); }
+  setAppH();
+  window.addEventListener('orientationchange', ()=>setTimeout(setAppH, 150));
+  window.addEventListener('resize', ()=>{ setAppH(); if(pageMeta && $('screen-game').classList.contains('active')){
     const wasFit = Math.abs(scale-minScale)<0.001; const vw=viewport.clientWidth, vh=viewport.clientHeight;
     minScale = Math.min(vw/pageMeta.w, vh/pageMeta.h); if(wasFit||scale<minScale) scale=minScale; applyTransform(); } });
   updateSoundBtn();
