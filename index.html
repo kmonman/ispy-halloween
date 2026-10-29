@@ -158,7 +158,13 @@
   .topbar .spacer{ width:38px; }
 
   .level-grid{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; width:100%; max-width:640px; }
-  @media(max-width:480px){ .level-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; } }
+  @media(max-width:480px){
+    .level-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; max-width:320px; }
+    .level-grid[data-n="3"]{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; max-width:100%; }
+    /* top row (back button + title) is as wide as the card grid, so the back button lines up with the outer cards */
+    #screen-levels:not([data-n="3"]) .topbar{ max-width:320px; }
+    #screen-levels .topbar h2{ font-size:19px; white-space:nowrap; }
+  }
   .level-btn{
     aspect-ratio:1; border-radius:16px; border:2px solid rgba(47,125,225,.45);
     background:linear-gradient(180deg,var(--bg-panel2),var(--bg-panel)); color:var(--text); display:flex; flex-direction:column;
@@ -168,12 +174,20 @@
   }
   .level-btn .num{ font-family:'Berlin Sans FB Demi','Segoe UI',Arial,sans-serif; font-size:clamp(22px,8vw,44px); font-weight:700; }
   .level-btn .shape{ font-size:10px; color:var(--text-dim); text-align:center; line-height:1.1; }
-  .level-btn .stars{ font-size:clamp(12px,4vw,22px); color:var(--orange-bright); }
+  .level-btn .stars{ display:flex; align-items:center; justify-content:center; min-height:20px; }
+  .lvl-star{ display:block; height:clamp(15px,4.6vw,22px); width:auto; filter:drop-shadow(0 0 4px rgba(255,190,70,.6)); }
+  .lvl-star.empty{ opacity:.25; filter:grayscale(1); }
+  .level-btn .shape svg{ width:10px; height:10px; vertical-align:-1px; margin-right:3px; }
+  .level-btn .lock svg{ width:clamp(18px,5.5vw,24px); height:auto; color:var(--text-dim); }
+  .diff-btn .diff-sub{
+    display:block; margin-top:3px; font:600 11px 'Courier New',monospace; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text-dim); text-shadow:none;
+  }
   .stars span{ display:inline-block; }
   .stars span:nth-child(1){ transform:rotate(-14deg) translateY(3px); }
   .stars span:nth-child(2){ transform:rotate(10deg) translateY(-4px) scale(1.15); }
   .stars span:nth-child(3){ transform:rotate(-8deg) translateY(2px); }
-  .level-btn .lock{ font-size:clamp(14px,5vw,24px); line-height:1; }
+  .level-btn .lock{ line-height:1; display:flex; }
   .level-btn.locked{ opacity:.35; cursor:not-allowed; box-shadow:none; }
   .level-btn.done{ border-color:var(--orange); box-shadow:0 0 14px rgba(255,190,70,.5), 0 0 30px rgba(255,190,70,.22), inset 0 0 14px rgba(255,190,70,.12); }
   .level-btn:not(.locked):hover{ border-color:var(--orange); transform:translateY(-3px); box-shadow:0 0 16px rgba(255,190,70,.5), 0 0 34px rgba(255,190,70,.25); }
@@ -196,8 +210,49 @@
     box-shadow:0 0 8px rgba(47,125,225,.25), 0 0 18px rgba(47,125,225,.1);
     color:var(--orange-bright); font-weight:700;
   }
-  .hud-stat.miss{ animation:missFlash .5s ease; }
-  @keyframes missFlash{ 0%{ border-color:var(--red); color:var(--red); box-shadow:0 0 16px rgba(255,77,109,.8);} 100%{} }
+  /* countdown time bar */
+  /* arcade energy-meter timer: glassy neon frame, glowing fill, turns hot pink + pulses when time is low */
+  .arcade-timer{
+    display:flex; align-items:center; gap:10px; width:calc(100% - 22px); max-width:878px; margin:0 auto 8px; padding:7px 12px;   /* inset to line up with the outer HUD buttons */
+    flex-shrink:0; position:relative; z-index:2;
+    border:2px solid rgba(90,160,255,.8); border-radius:16px;
+    background:linear-gradient(145deg, rgba(47,125,225,.45), rgba(8,15,34,.96)), #070f20;
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.28), inset 0 -8px 14px rgba(0,4,20,.85), 0 0 15px rgba(47,125,225,.45);
+    transition:border-color .25s ease, box-shadow .25s ease;
+  }
+  .timer-icon{ width:21px; height:21px; flex:none; color:var(--purple-soft); filter:drop-shadow(0 0 5px rgba(90,160,255,.9)); }
+  .timer-track{
+    position:relative; flex:1; height:17px; overflow:hidden;
+    border:2px solid rgba(142,197,255,.5); border-radius:999px; background:#060c1c;
+    box-shadow:inset 0 3px 7px rgba(0,0,0,.75);
+  }
+  .timer-track::after{   /* faint tick marks every 10% */
+    content:''; position:absolute; inset:0; z-index:2; pointer-events:none;
+    background:repeating-linear-gradient(90deg, transparent 0, transparent calc(10% - 1px), rgba(255,255,255,.14) calc(10% - 1px), rgba(255,255,255,.14) 10%);
+  }
+  .timer-fill{
+    position:relative; height:100%; width:100%; border-radius:inherit;
+    background:linear-gradient(90deg,var(--orange),var(--orange-bright));
+    box-shadow:0 0 10px rgba(255,190,70,.9), 0 0 18px rgba(255,190,70,.6);
+    transition:width .25s linear, background .25s ease, box-shadow .25s ease;
+  }
+  .timer-fill::after{   /* glass shine across the top of the fill */
+    content:''; position:absolute; left:7px; right:7px; top:2px; height:38%; border-radius:999px;
+    background:linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,0));
+  }
+  .timer-readout{
+    min-width:50px; text-align:right; flex:none; color:#fff3d1;
+    font:900 18px/1 'Courier New',monospace; letter-spacing:.02em; text-shadow:0 0 8px rgba(255,190,70,.9), 0 1px 2px rgba(0,0,0,.8);
+  }
+  .arcade-timer.low{ border-color:rgba(255,106,120,.95); box-shadow:inset 0 2px 2px rgba(255,255,255,.28), inset 0 -8px 14px rgba(25,0,8,.85), 0 0 18px rgba(255,77,94,.6); }
+  .arcade-timer.low .timer-fill{
+    background:linear-gradient(90deg,#ff2a47,var(--red));
+    box-shadow:0 0 12px rgba(255,77,94,.95), 0 0 24px rgba(255,40,70,.85);
+    animation:timerWarn .65s ease-in-out infinite alternate;
+  }
+  .arcade-timer.low .timer-icon{ color:#ffd0d6; filter:drop-shadow(0 0 6px rgba(255,77,94,.95)); }
+  .arcade-timer.low .timer-readout{ color:#ffd5da; text-shadow:0 0 10px rgba(255,77,94,.95), 0 1px 2px rgba(0,0,0,.8); animation:timerWarn .65s ease-in-out infinite alternate; }
+  @keyframes timerWarn{ to{ filter:brightness(1.35); } }
   #levelTitle{
     font-family:'Berlin Sans FB Demi','Segoe UI',Arial,sans-serif; flex:1; min-width:0;
     text-align:center; font-size:clamp(14px,3.6vw,22px); color:var(--orange-bright);
@@ -211,7 +266,7 @@
   }
   #gameBack{ font-weight:900; }
   #restartBtn{ font-weight:700; font-size:18px; }
-  #hintBtn{ font-size:18px; }
+  #hintBtn svg{ filter:drop-shadow(0 0 4px rgba(255,190,70,.85)); }
   #hintBtn:disabled{ opacity:.35; cursor:not-allowed; }
 
   #tray{
@@ -424,6 +479,78 @@
   .diff-btn .icon-badge svg{ width:100%; height:100%; display:block; filter:drop-shadow(0 0 5px var(--glow-soft)) drop-shadow(0 0 12px var(--glow-soft2)); transition:transform .25s; }
   .diff-btn:hover .icon-badge svg{ transform:rotate(-14deg) scale(1.1); }
 
+
+  /* ---- glass buttons on the game page: same lighter stroke + highlights as the timer ---- */
+  #levelsBack, #gameBack, #hintBtn, #restartBtn, #screen-game .zoom-btn{
+    border:2px solid rgba(110,175,255,.85);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.16) 0, rgba(255,255,255,0) 50%),
+      linear-gradient(145deg, rgba(47,125,225,.5), rgba(8,15,34,.96)), #070f20;
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.34), inset 0 -8px 14px rgba(0,4,20,.85), 0 0 15px rgba(47,125,225,.5);
+    transition:box-shadow .15s ease, transform .15s ease, border-color .15s ease;
+  }
+  #levelsBack:hover, #gameBack:hover, #hintBtn:hover, #restartBtn:hover, #screen-game .zoom-btn:hover{
+    border-color:rgba(160,205,255,.95);
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.42), inset 0 -8px 14px rgba(0,4,20,.8), 0 0 22px rgba(90,160,255,.8);
+  }
+  #levelsBack svg, #gameBack svg, #restartBtn svg, #hintBtn svg{ filter:drop-shadow(0 0 4px rgba(255,190,70,.8)); }
+  #levelsBack{ color:var(--orange-bright); }
+
+  /* pick-a-case back button: just the chevron (20% bigger, no button), glows on hover */
+  #levelsBack, #levelsBack:hover, #levelsBack:active{
+    border:none; background:none; box-shadow:none; transform:none;
+    width:36px; height:44px; padding:0; margin-left:0;
+    display:flex; align-items:center; justify-content:flex-start; color:var(--orange-bright);
+  }
+  /* the -7px pulls the chevron's drawn edge (not its empty box) onto the outer cards' left edge */
+  #levelsBack svg{ width:23px; height:23px; margin-left:-6.9px; filter:none; transition:filter .15s ease, color .15s ease; }
+  #levelsBack:hover svg, #levelsBack:active svg, #levelsBack:focus-visible svg{
+    color:#fff3d1; filter:drop-shadow(0 0 5px rgba(255,190,70,.95)) drop-shadow(0 0 12px rgba(255,190,70,.6));
+  }
+
+  /* ---- pick-a-case cards: glass look too (blue = open, gold = solved, dim = locked) ---- */
+  .level-btn{
+    border:2px solid rgba(110,175,255,.85);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.14) 0, rgba(255,255,255,0) 46%),
+      linear-gradient(145deg, rgba(47,125,225,.5), rgba(8,15,34,.96)), #070f20;
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.32), inset 0 -10px 18px rgba(0,4,20,.85), 0 0 15px rgba(47,125,225,.5);
+  }
+  .level-btn.done{
+    border-color:rgba(255,214,130,.9);
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.34), inset 0 -10px 18px rgba(0,4,20,.8), 0 0 16px rgba(255,190,70,.55);
+  }
+  .level-btn:not(.locked):hover{
+    border-color:rgba(160,205,255,.95);
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.42), inset 0 -10px 18px rgba(0,4,20,.8), 0 0 24px rgba(90,160,255,.8);
+  }
+  .level-btn.done:not(.locked):hover{
+    border-color:rgba(255,226,160,1);
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.42), inset 0 -10px 18px rgba(0,4,20,.8), 0 0 24px rgba(255,190,70,.85);
+  }
+  .level-btn.locked{
+    border-color:rgba(110,175,255,.35); opacity:.5;
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.12), inset 0 -10px 18px rgba(0,4,20,.85);
+  }
+  /* bigger, brighter text on the cards: "CASE", the case number and the time */
+  .level-btn .shape{ font-size:13px; letter-spacing:.14em; font-weight:700; color:#cfe0f5; }
+  .level-btn .shape:nth-child(3){ font-size:17px; letter-spacing:.06em; color:#f1f6ff; text-shadow:0 0 8px rgba(142,197,255,.55); }
+  .level-btn .shape svg{ width:15px; height:15px; margin-right:5px; vertical-align:-2px; }
+  .level-btn .num{ font-size:clamp(30px,11vw,52px); line-height:1.05; }
+  .level-grid[data-n="3"] .level-btn .shape{ font-size:11px; letter-spacing:.1em; }
+  .level-grid[data-n="3"] .level-btn .shape:nth-child(3){ font-size:14px; }
+  .level-grid[data-n="3"] .level-btn .shape svg{ width:12px; height:12px; margin-right:4px; }
+  .level-grid[data-n="3"] .level-btn .num{ font-size:clamp(26px,9vw,40px); }
+  .level-btn.locked .shape{ color:var(--text-dim); text-shadow:none; }  #screen-game .zoom-btn{ text-shadow:0 0 8px rgba(255,190,70,.85); }
+
+  /* clue chips: same glass treatment, keeping their gold stroke */
+  .chip{
+    border:2px solid rgba(255,214,130,.85);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.13) 0, rgba(255,255,255,0) 46%),
+      linear-gradient(145deg, rgba(47,125,225,.42), rgba(8,15,34,.96)), #070f20;
+    box-shadow:inset 0 2px 2px rgba(255,255,255,.3), inset 0 -8px 14px rgba(0,4,20,.8), 0 0 14px rgba(255,190,70,.4), 0 6px 14px rgba(0,0,0,.55);
+  }
 </style>
 </head>
 <body>
@@ -480,7 +607,7 @@
           <path d="M9.46 19.98 A17.6 17.6 0 0 1 29.06 8.67 A24 24 0 0 0 9.46 19.98 Z" fill="#fff" fill-opacity=".95"/>
           <path d="M42.54 32.02 A17.6 17.6 0 0 1 22.94 43.33 A24 24 0 0 0 42.54 32.02 Z" fill="#bfe0ff" fill-opacity=".55"/>
         </svg></span>
-        <span class="label">Easy</span>
+        <span class="label">Easy<small class="diff-sub"></small></span>
         <span class="chevron">›</span>
       </button>
       <button class="diff-btn" data-diff="medium">
@@ -522,7 +649,7 @@
           <path d="M9.46 19.98 A17.6 17.6 0 0 1 29.06 8.67 A24 24 0 0 0 9.46 19.98 Z" fill="#fff" fill-opacity=".95"/>
           <path d="M42.54 32.02 A17.6 17.6 0 0 1 22.94 43.33 A24 24 0 0 0 42.54 32.02 Z" fill="#bfe0ff" fill-opacity=".55"/>
         </svg></span>
-        <span class="label">Medium</span>
+        <span class="label">Medium<small class="diff-sub"></small></span>
         <span class="chevron">›</span>
       </button>
       <button class="diff-btn" data-diff="hard">
@@ -564,7 +691,7 @@
           <path d="M9.46 19.98 A17.6 17.6 0 0 1 29.06 8.67 A24 24 0 0 0 9.46 19.98 Z" fill="#fff" fill-opacity=".95"/>
           <path d="M42.54 32.02 A17.6 17.6 0 0 1 22.94 43.33 A24 24 0 0 0 42.54 32.02 Z" fill="#bfe0ff" fill-opacity=".55"/>
         </svg></span>
-        <span class="label">Hard</span>
+        <span class="label">Hard<small class="diff-sub"></small></span>
         <span class="chevron">›</span>
       </button>
       <div class="howto-wrap">
@@ -572,7 +699,8 @@
         <div class="howto-popup" id="howtoPopup">
           <b>Goal:</b> find <b>every copy</b> of the evidence tags shown at the top.<br>
           <b>👆 Tap</b> an item to spot it. <b>Drag</b> to move around, <b>pinch</b> or scroll to zoom.<br>
-          <b>🔦 Lantern glow</b> follows your finger (it never hides anything). <b>💡 Hints</b> and <b>wrong taps</b> cost points!
+          <b>🔍 Tap a clue</b> at the top to see it bigger. <b>🔦 Lantern glow</b> follows your finger (it never hides anything).<br>
+          Beat the <b>⏱ clock</b> — more time left means more stars. <b>💡 Hints</b> cost points!
         </div>
       </div>
     </div>
@@ -599,10 +727,13 @@
     <div id="gameHud">
       <button class="icon-btn" id="gameBack" title="Back" aria-label="Back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
       <div id="levelTitle">Case 1 · Easy</div>
-      <div class="hud-stat" id="timerEl">⏱ 00:00</div>
-      <div class="hud-stat" id="missEl">Strikes: 0</div>
-      <button class="icon-btn" id="hintBtn" title="Hint (costs points)" aria-label="Hint">💡</button>
+      <button class="icon-btn" id="hintBtn" title="Hint (costs points)" aria-label="Hint"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"></path><path d="M10 21.5h4"></path><path d="M12 2.5a6.5 6.5 0 0 0-3.9 11.7c.6.5.9 1.2.9 2v.3h6v-.3c0-.8.3-1.5.9-2A6.5 6.5 0 0 0 12 2.5z"></path></svg></button>
       <button class="icon-btn" id="restartBtn" title="Restart" aria-label="Restart"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"></path><polyline points="20 3.5 20 8.5 15 8.5"></polyline></svg></button>
+    </div>
+    <div id="timeBar" class="arcade-timer" role="timer" aria-label="Time remaining">
+      <svg class="timer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"></circle><path d="M12 9.5v4.4l2.8 1.8"></path><path d="M9.5 3h5"></path><path d="M12 3v3"></path><path d="M18.6 6.6l1.4-1.4"></path></svg>
+      <div class="timer-track"><div class="timer-fill" id="timeFill"></div></div>
+      <div class="timer-readout" id="timeText">02:00</div>
     </div>
     <div id="tray"></div>
     <div id="viewport">
@@ -613,7 +744,7 @@
         <button class="icon-btn zoom-btn" id="zoomOut" aria-label="Zoom out">−</button>
       </div>
     </div>
-    <p id="controlHint">Mark every copy of the evidence above · tap a clue to enlarge · drag to pan · pinch or scroll to zoom</p>
+    <p id="controlHint">Tap a clue to enlarge it · drag to pan · pinch to zoom</p>
     <div id="peek" aria-hidden="true"><img alt=""></div>
   </div>
 
@@ -625,7 +756,7 @@
 <div id="winModal">
   <div class="win-card">
     <div id="confettiLayer"></div>
-    <div class="stamp">SOLVED</div>
+    <div class="stamp" id="stampEl">SOLVED</div>
     <h2 id="winTitle">Case Closed!</h2>
     <div class="win-stars" id="winStars">★★★</div>
     <div class="win-stats" id="winStats"></div>
@@ -639,7 +770,7 @@
   </div>
 </div>
 
-<script src="pages/meta.js"></script>
+<script src="pages/meta.js?v=14"></script>
 <script>
 (function(){
   "use strict";
@@ -647,9 +778,10 @@
   /* ===================== CONFIG ===================== */
   // Each level is one of the I Spy pages. "targets" = how many item types you must find all of.
   const DIFFICULTIES = {
-    easy:   { label:'Easy',   targets:3, pages:[5,6,7,10] },
-    medium: { label:'Medium', targets:4, pages:[2,3,4,9] },
-    hard:   { label:'Hard',   targets:6, pages:[8,1,11] }
+    // "seconds" = the time limit for every case of that difficulty
+    easy:   { label:'Easy',   targets:3, seconds:120, pages:[5,6,7,10,14] },
+    medium: { label:'Medium', targets:4, seconds:180, pages:[2,3,4,9,13] },
+    hard:   { label:'Hard',   targets:6, seconds:300, pages:[8,1,11,12] }
   };
   const STORAGE_KEY = 'spookyISpyProgress_v1';
   const SOUND_KEY   = 'spookyISpySound_v1';
@@ -681,14 +813,13 @@
     const prev = p[diffKey] && p[diffKey][n-1];
     return !!(prev && prev.completed && (prev.bestStars||0) >= 2);
   }
-  function saveResult(diffKey, n, timeMs, misses, stars){
+  function saveResult(diffKey, n, timeMs, stars){
     const p = loadProgress();
     if(!p[diffKey]) p[diffKey] = {};
     const e = p[diffKey][n];
     p[diffKey][n] = {
       completed:true,
       bestTimeMs: e ? Math.min(e.bestTimeMs, timeMs) : timeMs,
-      bestMisses: e ? Math.min(e.bestMisses, misses) : misses,
       bestStars:  e ? Math.max(e.bestStars, stars) : stars
     };
     saveProgressData(p);
@@ -702,7 +833,7 @@
   let currentDiff=null, currentLevelNum=1, selectedDiff='easy';
   let pageNum=null, pageMeta=null;
   let targetTypes=[], remaining={}, found=new Set(), totalTargetItems=0;
-  let misses=0, hints=0, startTs=0, timerInterval=null, finished=false;
+  let hints=0, startTs=0, timeLimit=0, timerInterval=null, finished=false;
 
   const $ = id => document.getElementById(id);
   const viewport=$('viewport'), stage=$('stage'), pageImg=$('pageImg');
@@ -722,19 +853,21 @@
     showScreen('screen-levels');
   }
   function starsMarkup(filled,total){
-    let s=''; for(let k=0;k<total;k++) s += `<span>${k<filled?'★':'☆'}</span>`; return s;
+    let s=''; for(let k=0;k<total;k++) s += `<span><img class="lvl-star${k<filled?'':' empty'}" src="assets/star.png" alt=""></span>`; return s;
   }
   function renderLevelSelect(){
     const grid = $('levelGrid'); grid.innerHTML='';
     const d = DIFFICULTIES[selectedDiff];
     const prog = loadProgress()[selectedDiff] || {};
+    grid.dataset.n = $('screen-levels').dataset.n = d.pages.length;
+    const clock = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"></circle><path d="M12 8.5V13l3 2"></path><path d="M9.5 2.5h5"></path></svg>';
+    const padlock = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>';
     d.pages.forEach((pg,i)=>{
       const n = i+1, unlocked = isLevelUnlocked(selectedDiff,n), r = prog[n];
       const b = document.createElement('button');
       b.className = 'level-btn' + (unlocked?'':' locked') + (r&&r.completed?' done':'');
-      const items = META[pg].items.length;
-      b.innerHTML = `<span class="shape">Case</span><span class="num">${n}</span><span class="shape">${items} clues</span>` +
-        (unlocked ? `<span class="stars">${starsMarkup(r?r.bestStars:0,3)}</span>` : `<span class="lock">🔒</span>`);
+      b.innerHTML = `<span class="shape">Case</span><span class="num">${n}</span><span class="shape">${clock}${formatTime(d.seconds*1000).replace(/^0/,'')}</span>` +
+        (unlocked ? `<span class="stars">${starsMarkup(r?r.bestStars:0,3)}</span>` : `<span class="lock">${padlock}</span>`);
       if(unlocked) b.addEventListener('click', ()=>startLevel(selectedDiff,n));
       grid.appendChild(b);
     });
@@ -753,9 +886,9 @@
     targetTypes = shuffle(pageMeta.counts.map((_,i)=>i)).slice(0,k).sort((a,b)=>a-b);
     remaining = {}; totalTargetItems = 0;
     targetTypes.forEach(t=>{ remaining[t]=pageMeta.counts[t]; totalTargetItems += pageMeta.counts[t]; });
-    found = new Set(); misses=0; hints=0; finished=false;
+    found = new Set(); hints=0; finished=false;
+    timeLimit = d.seconds*1000;
     $('levelTitle').textContent = `Case ${n} · ${d.label}`;
-    $('missEl').textContent = 'Strikes: 0';
     $('hintBtn').disabled = false;
     renderTray();
     // reset stage
@@ -764,7 +897,14 @@
     pageImg.style.opacity = '0';
     let tries = 0;
     const loadPage = ()=>{ pageImg.src = `pages/p${pageNum}.jpg` + (tries ? '?r='+tries : ''); };
-    pageImg.onload = ()=>{ pageImg.style.opacity = '1'; };
+    const thisPage = pageNum;
+    pageImg.onload = ()=>{
+      pageImg.style.opacity = '1';
+      // the clock only starts once the page is actually showing (slow connections don't lose time)
+      if(!timerInterval && !finished && pageNum===thisPage){
+        startTs = Date.now(); updateTime(); timerInterval = setInterval(updateTime, 250);
+      }
+    };
     pageImg.onerror = ()=>{ if(++tries <= 4) setTimeout(loadPage, 300*tries); };
     // watchdog: if the image stalls (flaky connection), try again with a fresh request
     const myPage = pageNum;
@@ -777,10 +917,18 @@
     loadPage();
     showScreen('screen-game');
     requestAnimationFrame(()=>{ fitView(); });
+    if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
     startTs = Date.now();
-    $('timerEl').textContent = '⏱ 00:00';
-    if(timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(()=>{ $('timerEl').textContent = '⏱ '+formatTime(Date.now()-startTs); }, 250);
+    updateTime();   // shows a full bar until the page has loaded
+    if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+  }
+  // the time bar drains from full to empty; green -> amber -> red
+  function updateTime(){
+    const left = Math.max(0, timeLimit-(Date.now()-startTs)), frac = left/timeLimit, bar = $('timeBar');
+    $('timeFill').style.width = (frac*100)+'%';
+    $('timeText').textContent = formatTime(Math.ceil(left/1000)*1000);
+    bar.classList.toggle('low', left>0 && left<=10000);   // last 10 seconds: hot pink + pulse
+    if(left<=0 && !finished) timeUp();
   }
   function renderTray(){
     const tray = $('tray'); tray.innerHTML='';
@@ -931,9 +1079,7 @@
     return el;
   }
   function registerMiss(x,y){
-    misses++;
-    const m = $('missEl'); m.textContent='Strikes: '+misses;
-    m.classList.remove('miss'); void m.offsetWidth; m.classList.add('miss');
+    // just a quick ✕ where you tapped — no penalty
     const el = document.createElement('div');
     el.className='miss-x'; el.textContent='✕';
     el.style.left=x+'px'; el.style.top=y+'px';
@@ -957,10 +1103,10 @@
   });
 
   /* ===================== FINISH ===================== */
+  // more time left = more stars; each hint costs 10 points
   function computeStars(elapsed){
-    const par = totalTargetItems*3500 + 15000;
-    let pts = 100 - misses*4 - hints*10 - Math.max(0,(elapsed-par)/par)*30;
-    return pts>=80 ? 3 : pts>=55 ? 2 : 1;
+    const pts = Math.max(0, 1 - elapsed/timeLimit)*100 - hints*10;
+    return pts>=45 ? 3 : pts>=15 ? 2 : 1;
   }
   function winStarsMarkup(filled,total){
     let s='';
@@ -972,12 +1118,13 @@
     if(timerInterval){ clearInterval(timerInterval); timerInterval=null; }
     const elapsed = Date.now()-startTs;
     const stars = computeStars(elapsed);
-    saveResult(currentDiff, currentLevelNum, elapsed, misses, stars);
+    saveResult(currentDiff, currentLevelNum, elapsed, stars);
     setTimeout(()=>{
       play(sfxWin);
+      $('stampEl').textContent = 'SOLVED';
       $('winTitle').textContent = stars<=1 ? 'Case Closed… Barely' : 'Case Closed!';
       $('winStars').innerHTML = winStarsMarkup(stars,3);
-      $('winStats').textContent = `Time: ${formatTime(elapsed)} · Strikes: ${misses} · Hints: ${hints}`;
+      $('winStats').textContent = `Time left: ${formatTime(Math.max(0,timeLimit-elapsed))} · Hints: ${hints}`;
       const total = DIFFICULTIES[currentDiff].pages.length;
       const canAdvance = stars>=2 && currentLevelNum<total;
       $('nextLevelBtn').style.display = canAdvance ? 'block' : 'none';
@@ -986,6 +1133,21 @@
       $('winModal').classList.add('active');
       if(stars>1) spawnConfetti();
     }, 650);
+  }
+  function timeUp(){
+    finished = true;
+    if(timerInterval){ clearInterval(timerInterval); timerInterval=null; }
+    const left = Object.values(remaining).reduce((a,b)=>a+b, 0), got = totalTargetItems-left;
+    setTimeout(()=>{
+      $('stampEl').textContent = "TIME'S UP";
+      $('winTitle').textContent = 'Out of Time!';
+      $('winStars').innerHTML = winStarsMarkup(0,3);
+      $('winStats').textContent = `Found ${got} of ${totalTargetItems} clues`;
+      $('nextLevelBtn').style.display = 'none';
+      $('winHint').textContent = 'The trail went cold. Try again!';
+      $('confettiLayer').innerHTML = '';
+      $('winModal').classList.add('active');
+    }, 300);
   }
   function spawnConfetti(){
     const layer = $('confettiLayer'); layer.innerHTML='';
@@ -1005,7 +1167,11 @@
   }
 
   /* ===================== WIRING ===================== */
-  document.querySelectorAll('.diff-btn').forEach(b=>b.addEventListener('click', ()=>openLevelSelect(b.dataset.diff)));
+  document.querySelectorAll('.diff-btn').forEach(b=>{
+    const d = DIFFICULTIES[b.dataset.diff];
+    b.querySelector('.diff-sub').textContent = `Find ${d.targets} clues · ${formatTime(d.seconds*1000).replace(/^0/,'')}`;
+    b.addEventListener('click', ()=>openLevelSelect(b.dataset.diff));
+  });
   $('levelsBack').addEventListener('click', ()=>showScreen('screen-menu'));
   $('gameBack').addEventListener('click', ()=>{ renderLevelSelect(); showScreen('screen-levels'); });
   $('restartBtn').addEventListener('click', ()=>startLevel(currentDiff, currentLevelNum));
