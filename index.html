@@ -939,8 +939,8 @@
       tray.appendChild(c);
     });
   }
-  let peekTimer = null;
-  function hidePeek(){ clearTimeout(peekTimer); $('peek').classList.remove('show'); }
+  let peekTimer = null, peekType = null;
+  function hidePeek(){ clearTimeout(peekTimer); peekType = null; $('peek').classList.remove('show'); }
   function peek(t, chip){
     const p = $('peek'), s = Math.round(chip.querySelector('img').getBoundingClientRect().width * 3);
     const cr = chip.getBoundingClientRect(), tr = $('tray').getBoundingClientRect(), w = s + 20;
@@ -948,10 +948,15 @@
     p.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, cr.left + cr.width/2 - w/2)) + 'px';
     p.style.top = (tr.bottom + 6) + 'px';
     p.querySelector('img').src = `pages/p${pageNum}_t${t}.png`;
-    p.classList.add('show');
+    p.classList.add('show'); peekType = t;
     clearTimeout(peekTimer); peekTimer = setTimeout(hidePeek, 2500);
   }
-  $('tray').addEventListener('click', e=>{ const c = e.target.closest('.chip'); if(c) peek(+c.id.slice(4), c); });
+  // tap a clue to enlarge it; tap the same clue again to close it (a different clue switches to that one)
+  $('tray').addEventListener('click', e=>{
+    const c = e.target.closest('.chip'); if(!c) return;
+    const t = +c.id.slice(4);
+    if($('peek').classList.contains('show') && peekType===t) hidePeek(); else peek(t, c);
+  });
   $('peek').addEventListener('click', hidePeek);
   function updateChip(t){
     const c = $('chip'+t);
